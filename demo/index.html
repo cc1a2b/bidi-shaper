@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>bidi-shaper — demo</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d; --text: #e6edf3;
+    --dim: #8b949e; --accent: #58a6ff; --good: #3fb950; --bad: #f85149;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 2rem; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, sans-serif; max-width: 980px; margin-inline: auto;
+  }
+  h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
+  h1 .ver { color: var(--dim); font-size: .9rem; font-weight: normal; }
+  p.lead { color: var(--dim); margin-top: 0; }
+  .samples { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+  .samples button {
+    background: var(--panel); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: .35rem .7rem; cursor: pointer; font-size: .85rem;
+  }
+  .samples button:hover { border-color: var(--accent); }
+  textarea {
+    width: 100%; min-height: 70px; background: var(--panel); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: .75rem;
+    font: 18px/1.6 monospace; direction: ltr; unicode-bidi: bidi-override;
+  }
+  .controls { display: flex; flex-wrap: wrap; gap: 1rem; margin: .75rem 0 1.5rem; align-items: center; }
+  .controls label { color: var(--dim); font-size: .9rem; display: flex; gap: .35rem; align-items: center; }
+  select { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: .25rem; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .card h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: 0 0 .5rem; }
+  .card h2 .tag { border-radius: 99px; padding: .1rem .55rem; font-size: .7rem; margin-left: .5rem; }
+  .tag.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+  .tag.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+  canvas { width: 100%; height: 64px; display: block; }
+  .out {
+    font: 18px/1.6 monospace; direction: ltr; unicode-bidi: bidi-override;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: .5rem .75rem; overflow-wrap: anywhere; user-select: all;
+  }
+  .levels { display: flex; flex-wrap: wrap; gap: 4px; margin-top: .5rem; }
+  .levels span {
+    font: 13px/1 monospace; padding: .35rem .45rem; border-radius: 4px;
+    border: 1px solid var(--border); display: inline-flex; flex-direction: column; gap: .3rem; align-items: center;
+  }
+  .levels b { font-size: 15px; }
+  .lv0 { background: #11304d; } .lv1 { background: #4d2a11; }
+  .lv2 { background: #1d4d11; } .lv3 { background: #4d1140; }
+  footer { color: var(--dim); font-size: .85rem; margin-top: 2rem; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<h1>bidi-shaper <span class="ver" id="ver"></span></h1>
+<p class="lead">
+  Logical→visual UAX&nbsp;#9 reordering + Arabic contextual shaping for renderers that draw
+  glyphs naively left-to-right. Both canvases below place each code point one after another —
+  exactly what jsPDF, bitmap-font engines, and game renderers do.
+</p>
+
+<div class="samples" id="samples"></div>
+<textarea id="input" spellcheck="false"></textarea>
+
+<div class="controls">
+  <label>direction
+    <select id="direction"><option>auto</option><option>ltr</option><option>rtl</option></select>
+  </label>
+  <label><input type="checkbox" id="shape" checked /> shape Arabic</label>
+  <label><input type="checkbox" id="ligatures" checked /> lam-alef ligatures</label>
+  <label><input type="checkbox" id="mirror" checked /> mirror brackets</label>
+  <label><input type="checkbox" id="strip" /> strip tashkeel</label>
+</div>
+
+<div class="card">
+  <h2>naive renderer, raw string <span class="tag bad">broken</span></h2>
+  <canvas id="rawCanvas"></canvas>
+</div>
+
+<div class="card">
+  <h2>naive renderer, bidi-shaper output <span class="tag good">correct</span></h2>
+  <canvas id="fixedCanvas"></canvas>
+</div>
+
+<div class="card">
+  <h2>render() output string (visual order — copy into your renderer)</h2>
+  <div class="out" id="outString"></div>
+</div>
+
+<div class="card">
+  <h2>analyze() — resolved embedding levels (logical order)</h2>
+  <div class="levels" id="levels"></div>
+</div>
+
+<footer>
+  Serve from the repo root after <code>npm run build</code> (e.g. <code>npx serve</code>) —
+  this page imports <code>../dist/index.js</code>.
+</footer>
+
+<script type="module">
+  import { render, analyze, UNICODE_VERSION } from '../dist/index.js';
+
+  const SAMPLES = [
+    ['Arabic', 'مرحبا بالعالم'],
+    ['Urdu', 'اردو میں خوش آمدید'],
+    ['Mixed', 'The title is "مفتاح المعاني" in Arabic.'],
+    ['Numbers', 'قیمت: 123.45 تومان'],
+    ['Brackets', 'قائمة (أ) و [ب]'],
+    ['Tashkeel', 'مُحَمَّدٌ رَسُولُ اللَّهِ'],
+    ['Persian', 'سلام دنیا ۱۲۳'],
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  document.getElementById('ver').textContent = 'Unicode ' + UNICODE_VERSION;
+
+  for (const [name, text] of SAMPLES) {
+    const b = document.createElement('button');
+    b.textContent = name;
+    b.onclick = () => { $('input').value = text; update(); };
+    $('samples').append(b);
+  }
+
+  function options() {
+    return {
+      direction: $('direction').value,
+      shape: $('shape').checked,
+      ligatures: $('ligatures').checked,
+      mirror: $('mirror').checked,
+      tashkeel: $('strip').checked ? 'strip' : 'keep',
+    };
+  }
+
+  /** Draw each code point individually, advancing by its measured width —
+      this is how a shaping-unaware renderer behaves. */
+  function drawNaive(canvas, text) {
+    const dpr = devicePixelRatio || 1;
+    const w = canvas.clientWidth, h = 64;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.font = '28px "Segoe UI", "Noto Sans Arabic", "Noto Nastaliq Urdu", sans-serif';
+    ctx.fillStyle = '#e6edf3';
+    ctx.textBaseline = 'middle';
+    let x = 8;
+    for (const ch of text.split('\n')[0]) {
+      ctx.fillText(ch, x, h / 2);
+      x += ctx.measureText(ch).width;
+    }
+  }
+
+  function update() {
+    const text = $('input').value;
+    const opts = options();
+    const result = analyze(text, opts);
+
+    drawNaive($('rawCanvas'), text);
+    drawNaive($('fixedCanvas'), result.text);
+    $('outString').textContent = result.text;
+
+    const levels = $('levels');
+    levels.replaceChildren();
+    const cps = Array.from(text);
+    for (let i = 0; i < cps.length; i++) {
+      const lv = result.levels[i];
+      const cell = document.createElement('span');
+      cell.className = 'lv' + Math.min(lv, 3);
+      const ch = document.createElement('b');
+      ch.textContent = cps[i] === '\n' ? '⏎' : cps[i];
+      const num = document.createElement('small');
+      num.textContent = lv;
+      cell.append(ch, num);
+      levels.append(cell);
+    }
+  }
+
+  for (const id of ['direction', 'shape', 'ligatures', 'mirror', 'strip']) {
+    $(id).addEventListener('change', update);
+  }
+  $('input').addEventListener('input', update);
+
+  $('input').value = SAMPLES[2][1];
+  update();
+</script>
+</body>
+</html>

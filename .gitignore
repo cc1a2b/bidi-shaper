@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.idea/
+.vscode/
+
+# Raw Unicode source files are cached here by scripts/generate-data.ts.
+# The *generated* tables (src/data/generated) ARE committed; these inputs are not.
+scripts/.cache/
+
+# Demo build artifacts
+demo/*.pdf

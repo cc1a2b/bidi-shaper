@@ -1,0 +1,137 @@
+{
+  "name": "bidi-shaper",
+  "version": "0.1.0",
+  "description": "Logical→visual Unicode BiDi (UAX #9) reordering + Arabic contextual shaping for renderers outside the browser (PDF, canvas, WebGL, SVG, terminals, games). Zero dependencies.",
+  "keywords": [
+    "bidi",
+    "bidirectional",
+    "uax9",
+    "arabic",
+    "shaping",
+    "rtl",
+    "persian",
+    "urdu",
+    "unicode",
+    "presentation-forms",
+    "jspdf",
+    "pdfmake",
+    "pdfkit",
+    "canvas",
+    "three.js",
+    "reorder"
+  ],
+  "license": "MIT",
+  "author": "bidi-shaper contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cc1a2b/bidi-shaper.git"
+  },
+  "homepage": "https://github.com/cc1a2b/bidi-shaper#readme",
+  "bugs": {
+    "url": "https://github.com/cc1a2b/bidi-shaper/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./jspdf": {
+      "import": {
+        "types": "./dist/adapters/jspdf.d.ts",
+        "default": "./dist/adapters/jspdf.js"
+      },
+      "require": {
+        "types": "./dist/adapters/jspdf.d.cts",
+        "default": "./dist/adapters/jspdf.cjs"
+      }
+    },
+    "./pdfmake": {
+      "import": {
+        "types": "./dist/adapters/pdfmake.d.ts",
+        "default": "./dist/adapters/pdfmake.js"
+      },
+      "require": {
+        "types": "./dist/adapters/pdfmake.d.cts",
+        "default": "./dist/adapters/pdfmake.cjs"
+      }
+    },
+    "./pdfkit": {
+      "import": {
+        "types": "./dist/adapters/pdfkit.d.ts",
+        "default": "./dist/adapters/pdfkit.js"
+      },
+      "require": {
+        "types": "./dist/adapters/pdfkit.d.cts",
+        "default": "./dist/adapters/pdfkit.cjs"
+      }
+    },
+    "./canvas": {
+      "import": {
+        "types": "./dist/adapters/canvas.d.ts",
+        "default": "./dist/adapters/canvas.js"
+      },
+      "require": {
+        "types": "./dist/adapters/canvas.d.cts",
+        "default": "./dist/adapters/canvas.cjs"
+      }
+    },
+    "./three": {
+      "import": {
+        "types": "./dist/adapters/three.d.ts",
+        "default": "./dist/adapters/three.js"
+      },
+      "require": {
+        "types": "./dist/adapters/three.d.cts",
+        "default": "./dist/adapters/three.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:conformance": "vitest run test/conformance",
+    "test:coverage": "vitest run --coverage",
+    "generate-data": "tsx scripts/generate-data.ts",
+    "bench": "node bench/bench.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.2",
+    "@vitest/coverage-v8": "^4.1.8",
+    "bidi-js": "^1.0.3",
+    "eslint": "^9.17.0",
+    "tinybench": "^6.0.2",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1",
+    "vitest": "^4.1.8"
+  }
+}
