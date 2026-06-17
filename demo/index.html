@@ -1,188 +1,283 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>bidi-shaper — demo</title>
-<style>
-  :root {
-    --bg: #0d1117; --panel: #161b22; --border: #30363d; --text: #e6edf3;
-    --dim: #8b949e; --accent: #58a6ff; --good: #3fb950; --bad: #f85149;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; padding: 2rem; background: var(--bg); color: var(--text);
-    font: 15px/1.5 system-ui, sans-serif; max-width: 980px; margin-inline: auto;
-  }
-  h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
-  h1 .ver { color: var(--dim); font-size: .9rem; font-weight: normal; }
-  p.lead { color: var(--dim); margin-top: 0; }
-  .samples { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
-  .samples button {
-    background: var(--panel); color: var(--text); border: 1px solid var(--border);
-    border-radius: 6px; padding: .35rem .7rem; cursor: pointer; font-size: .85rem;
-  }
-  .samples button:hover { border-color: var(--accent); }
-  textarea {
-    width: 100%; min-height: 70px; background: var(--panel); color: var(--text);
-    border: 1px solid var(--border); border-radius: 8px; padding: .75rem;
-    font: 18px/1.6 monospace; direction: ltr; unicode-bidi: bidi-override;
-  }
-  .controls { display: flex; flex-wrap: wrap; gap: 1rem; margin: .75rem 0 1.5rem; align-items: center; }
-  .controls label { color: var(--dim); font-size: .9rem; display: flex; gap: .35rem; align-items: center; }
-  select { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: .25rem; }
-  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
-  .card h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: 0 0 .5rem; }
-  .card h2 .tag { border-radius: 99px; padding: .1rem .55rem; font-size: .7rem; margin-left: .5rem; }
-  .tag.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
-  .tag.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
-  canvas { width: 100%; height: 64px; display: block; }
-  .out {
-    font: 18px/1.6 monospace; direction: ltr; unicode-bidi: bidi-override;
-    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-    padding: .5rem .75rem; overflow-wrap: anywhere; user-select: all;
-  }
-  .levels { display: flex; flex-wrap: wrap; gap: 4px; margin-top: .5rem; }
-  .levels span {
-    font: 13px/1 monospace; padding: .35rem .45rem; border-radius: 4px;
-    border: 1px solid var(--border); display: inline-flex; flex-direction: column; gap: .3rem; align-items: center;
-  }
-  .levels b { font-size: 15px; }
-  .lv0 { background: #11304d; } .lv1 { background: #4d2a11; }
-  .lv2 { background: #1d4d11; } .lv3 { background: #4d1140; }
-  footer { color: var(--dim); font-size: .85rem; margin-top: 2rem; }
-  footer a { color: var(--accent); }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bidi-shaper — right-to-left text, set right for any renderer</title>
+  <meta name="description" content="Logical→visual Unicode BiDi (UAX #9) reordering + Arabic contextual shaping in pure TypeScript. One string in, one visual-order string out — ready for jsPDF, pdfmake, PDFKit, canvas, three.js. Zero dependencies." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="theme-color" content="#f4efe3" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="bidi-shaper — right-to-left text, set right" />
+  <meta property="og:description" content="UAX #9 BiDi reordering + Arabic shaping, string-in / string-out. For renderers that draw glyphs naively left-to-right. Zero dependencies, MIT." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@200..700&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
 </head>
 <body>
-<h1>bidi-shaper <span class="ver" id="ver"></span></h1>
-<p class="lead">
-  Logical→visual UAX&nbsp;#9 reordering + Arabic contextual shaping for renderers that draw
-  glyphs naively left-to-right. Both canvases below place each code point one after another —
-  exactly what jsPDF, bitmap-font engines, and game renderers do.
-</p>
+  <div class="bg-pattern" aria-hidden="true"></div>
 
-<div class="samples" id="samples"></div>
-<textarea id="input" spellcheck="false"></textarea>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="#top">
+        <span class="brand-mark">لا</span>
+        <span class="brand-name">bidi-shaper</span>
+      </a>
+      <nav class="nav-links">
+        <a href="#bench">Try it</a>
+        <a href="#problem">The problem</a>
+        <a href="#install">Install</a>
+        <a class="btn btn-ghost btn-sm" href="https://github.com/cc1a2b/bidi-shaper" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          Star
+        </a>
+      </nav>
+    </div>
+  </header>
 
-<div class="controls">
-  <label>direction
-    <select id="direction"><option>auto</option><option>ltr</option><option>rtl</option></select>
-  </label>
-  <label><input type="checkbox" id="shape" checked /> shape Arabic</label>
-  <label><input type="checkbox" id="ligatures" checked /> lam-alef ligatures</label>
-  <label><input type="checkbox" id="mirror" checked /> mirror brackets</label>
-  <label><input type="checkbox" id="strip" /> strip tashkeel</label>
-</div>
+  <main id="top">
+    <!-- ============================== MASTHEAD ============================== -->
+    <section class="masthead container">
+      <p class="eyebrow">Open source · MIT · Zero dependencies · UAX&nbsp;#9</p>
+      <h1>Logical order in.<br /><em>Visual order out.</em></h1>
+      <p class="hero-ar" lang="ar" dir="rtl">يُكتَب النصُّ بترتيب القراءة، ويُرسَم بترتيب الرؤية — وهذه المسافة بينهما هي عملي.</p>
 
-<div class="card">
-  <h2>naive renderer, raw string <span class="tag bad">broken</span></h2>
-  <canvas id="rawCanvas"></canvas>
-</div>
+      <div class="galley" role="img" aria-label="One line, stored in reading order and drawn in visual order">
+        <div class="galley-row">
+          <span class="galley-tag">logical</span>
+          <span class="galley-text logical" id="galley-logical"></span>
+        </div>
+        <div class="galley-row">
+          <span class="galley-tag" style="color:var(--red)">visual</span>
+          <span class="galley-text" id="galley-visual" dir="ltr"></span>
+        </div>
+      </div>
+      <p class="galley-note">Same sentence, twice. The top row is how text is <b>stored</b> (reading order); the bottom is exactly what bidi-shaper hands a left-to-right renderer to <b>draw</b> — shaped and reordered, just now, in your browser.</p>
 
-<div class="card">
-  <h2>naive renderer, bidi-shaper output <span class="tag good">correct</span></h2>
-  <canvas id="fixedCanvas"></canvas>
-</div>
+      <div class="masthead-actions">
+        <div class="install-box" id="install">
+          <code>npm install bidi-shaper</code>
+          <button class="btn btn-copy" id="copy-install" type="button">Copy</button>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/cc1a2b/bidi-shaper" target="_blank" rel="noopener">★ Star on GitHub</a>
+          <a class="btn btn-ghost" href="#bench">Try it live ↓</a>
+        </div>
+      </div>
 
-<div class="card">
-  <h2>render() output string (visual order — copy into your renderer)</h2>
-  <div class="out" id="outString"></div>
-</div>
+      <div class="proof" aria-label="The same string drawn by a naive renderer, before and after bidi-shaper">
+        <div class="proof-head">
+          <span class="proof-stamp" lang="ar">قبل · بعد</span>
+          <em>each glyph placed left-to-right, the way jsPDF / a bitmap font / a game engine does it</em>
+        </div>
+        <div class="proof-body">
+          <div class="stage">
+            <div class="stage-label">the raw string <span class="tick bad">naive render</span></div>
+            <canvas class="stage-canvas" id="proof-raw"></canvas>
+          </div>
+          <div class="stage">
+            <div class="stage-label">render(string) <span class="tick good">bidi-shaper</span></div>
+            <canvas class="stage-canvas" id="proof-fixed"></canvas>
+          </div>
+        </div>
+        <div class="proof-dots" id="proof-dots"></div>
+      </div>
+    </section>
 
-<div class="card">
-  <h2>analyze() — resolved embedding levels (logical order)</h2>
-  <div class="levels" id="levels"></div>
-</div>
+    <!-- ============================== PROBLEM ============================== -->
+    <section id="problem" class="container section">
+      <div class="stats-row">
+        <div class="stat"><strong id="stat-conf">861,948</strong><span>official UAX&nbsp;#9 conformance cases — 100% pass on every build</span></div>
+        <div class="stat"><strong>~15 kB</strong><span>min+gzip, pure TypeScript. ESM + CJS + types</span></div>
+        <div class="stat"><strong>5</strong><span>drop-in adapters: jsPDF · pdfmake · PDFKit · canvas · three.js</span></div>
+        <div class="stat"><strong>0</strong><span>runtime dependencies. No DOM, no fonts, no WASM</span></div>
+      </div>
+      <p class="stats-note">Browsers and HarfBuzz run two invisible passes before any glyph hits the screen: the <strong>bidirectional algorithm</strong> and <strong>Arabic shaping</strong>. Renderers that place glyphs one after another run neither. bidi-shaper runs both and hands you a plain string.</p>
 
-<footer>
-  Serve from the repo root after <code>npm run build</code> (e.g. <code>npx serve</code>) —
-  this page imports <code>../dist/index.js</code>.
-</footer>
+      <p class="kicker"><span lang="ar">٠١</span> · the errata</p>
+      <h2>What a naive renderer gets wrong</h2>
+      <p class="section-sub">Give a glyph-by-glyph renderer logical-order Arabic and four things break at once. bidi-shaper fixes all four before the first glyph is drawn.</p>
+      <div class="table-wrap">
+        <table class="compare">
+          <thead><tr><th>The text</th><th>Drawn naively, left-to-right</th><th>Through bidi-shaper</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Cursive joining</td>
+              <td class="bad">isolated, disconnected letters — ك ت ا ب</td>
+              <td class="good">joined to context — <span class="draw" dir="rtl">كتاب</span></td>
+            </tr>
+            <tr>
+              <td>Reading direction</td>
+              <td class="bad">runs come out reversed, end-first</td>
+              <td class="good">RTL runs flow right-to-left, LTR stays LTR</td>
+            </tr>
+            <tr>
+              <td>Numbers in RTL</td>
+              <td class="bad">drift to the wrong end of the line</td>
+              <td class="good">stay left-to-right, in place — <span class="draw" dir="rtl">سنة ١٤٤٧</span></td>
+            </tr>
+            <tr>
+              <td>Brackets &amp; quotes</td>
+              <td class="bad">( ) point the wrong way</td>
+              <td class="good">mirrored on RTL runs (rule L4)</td>
+            </tr>
+            <tr>
+              <td>lam + alef</td>
+              <td class="bad">two stray letters — ل&nbsp;ا</td>
+              <td class="good">one ligature — <span class="draw">ﻻ</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-<script type="module">
-  import { render, analyze, UNICODE_VERSION } from '../dist/index.js';
+    <!-- ============================== PLAYGROUND ============================== -->
+    <section id="bench" class="container section">
+      <p class="kicker"><span lang="ar">٠٢</span> · the galley</p>
+      <h2>Set your own line</h2>
+      <p class="section-sub">Type anything — Arabic, Persian, Urdu, mixed with English and numbers. Both canvases place each code point left-to-right, exactly like a renderer that can't shape or reorder. Only the second one is fed bidi-shaper's output.</p>
 
-  const SAMPLES = [
-    ['Arabic', 'مرحبا بالعالم'],
-    ['Urdu', 'اردو میں خوش آمدید'],
-    ['Mixed', 'The title is "مفتاح المعاني" in Arabic.'],
-    ['Numbers', 'قیمت: 123.45 تومان'],
-    ['Brackets', 'قائمة (أ) و [ب]'],
-    ['Tashkeel', 'مُحَمَّدٌ رَسُولُ اللَّهِ'],
-    ['Persian', 'سلام دنیا ۱۲۳'],
-  ];
+      <div class="grid">
+        <!-- card 1: the bench -->
+        <div class="card wide">
+          <div class="card-head">
+            <h3>The compositor's bench <span class="ar-tag" lang="ar">المنضدة</span></h3>
+            <p>One call — <code>render(text, options)</code> — shapes, reorders, and mirrors. Copy the output straight into <code>doc.text(...)</code>.</p>
+          </div>
 
-  const $ = (id) => document.getElementById(id);
-  document.getElementById('ver').textContent = 'Unicode ' + UNICODE_VERSION;
+          <div class="sample-row" id="bench-samples"></div>
+          <textarea id="bench-input" dir="auto" spellcheck="false" rows="2"></textarea>
 
-  for (const [name, text] of SAMPLES) {
-    const b = document.createElement('button');
-    b.textContent = name;
-    b.onclick = () => { $('input').value = text; update(); };
-    $('samples').append(b);
-  }
+          <div class="controls">
+            <label class="field">
+              <span>base direction</span>
+              <select id="opt-dir"><option value="auto">auto (first-strong)</option><option value="rtl">rtl</option><option value="ltr">ltr</option></select>
+            </label>
+            <label class="switch-field"><input type="checkbox" id="opt-shape" checked /><span class="switch"></span>shape Arabic</label>
+            <label class="switch-field"><input type="checkbox" id="opt-liga" checked /><span class="switch"></span>lam-alef ligatures</label>
+            <label class="switch-field"><input type="checkbox" id="opt-mirror" checked /><span class="switch"></span>mirror brackets</label>
+            <label class="switch-field"><input type="checkbox" id="opt-strip" /><span class="switch"></span>strip tashkeel</label>
+          </div>
 
-  function options() {
-    return {
-      direction: $('direction').value,
-      shape: $('shape').checked,
-      ligatures: $('ligatures').checked,
-      mirror: $('mirror').checked,
-      tashkeel: $('strip').checked ? 'strip' : 'keep',
-    };
-  }
+          <div class="stage">
+            <div class="stage-label">your string, drawn glyph-by-glyph <span class="tick bad">broken</span></div>
+            <canvas class="stage-canvas" id="bench-raw"></canvas>
+          </div>
+          <div class="stage">
+            <div class="stage-label">render() output, drawn the same way <span class="tick good">set</span></div>
+            <canvas class="stage-canvas" id="bench-fixed"></canvas>
+          </div>
 
-  /** Draw each code point individually, advancing by its measured width —
-      this is how a shaping-unaware renderer behaves. */
-  function drawNaive(canvas, text) {
-    const dpr = devicePixelRatio || 1;
-    const w = canvas.clientWidth, h = 64;
-    canvas.width = w * dpr; canvas.height = h * dpr;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    ctx.font = '28px "Segoe UI", "Noto Sans Arabic", "Noto Nastaliq Urdu", sans-serif';
-    ctx.fillStyle = '#e6edf3';
-    ctx.textBaseline = 'middle';
-    let x = 8;
-    for (const ch of text.split('\n')[0]) {
-      ctx.fillText(ch, x, h / 2);
-      x += ctx.measureText(ch).width;
-    }
-  }
+          <div class="out-row">
+            <code class="out-string" id="bench-out"></code>
+            <button class="btn btn-copy" id="bench-copy" type="button">Copy</button>
+          </div>
+          <p class="caption">The output string is in <b>visual order</b>: its code points are already shaped presentation forms in drawing sequence. Hand it to any renderer that lays glyphs out left-to-right.</p>
+        </div>
 
-  function update() {
-    const text = $('input').value;
-    const opts = options();
-    const result = analyze(text, opts);
+        <!-- card 2: embedding levels -->
+        <div class="card">
+          <div class="card-head">
+            <h3>Embedding levels <span class="ar-tag" lang="ar">المستويات</span></h3>
+            <p><code>analyze(text)</code> resolves a level per code point. Even is left-to-right, odd is right-to-left — the spine of the bidi algorithm.</p>
+          </div>
+          <input type="text" id="lvl-input" dir="auto" spellcheck="false" />
+          <div class="levels" id="lvl-strip"></div>
+          <div class="legend">
+            <span><i class="swatch even"></i> even = LTR</span>
+            <span><i class="swatch odd"></i> odd = RTL</span>
+            <span id="lvl-dir"></span>
+          </div>
+        </div>
 
-    drawNaive($('rawCanvas'), text);
-    drawNaive($('fixedCanvas'), result.text);
-    $('outString').textContent = result.text;
+        <!-- card 3: shaping -->
+        <div class="card">
+          <div class="card-head">
+            <h3>Contextual shaping <span class="ar-tag" lang="ar">التشكيل</span></h3>
+            <p>One Arabic letter is four glyphs, chosen by its neighbours. Pick a letter to see the forms <code>shape()</code> substitutes.</p>
+          </div>
+          <div class="segmented" id="shape-letters"></div>
+          <div class="specimen" id="specimen"></div>
+          <div class="liga-note">
+            <span>And the special case:</span>
+            <span dir="rtl">ل</span><span class="liga-arrow">+</span><span dir="rtl">ا</span>
+            <span class="liga-arrow">→</span><b>ﻻ</b>
+            <span>— lam + alef become one ligature.</span>
+          </div>
+        </div>
 
-    const levels = $('levels');
-    levels.replaceChildren();
-    const cps = Array.from(text);
-    for (let i = 0; i < cps.length; i++) {
-      const lv = result.levels[i];
-      const cell = document.createElement('span');
-      cell.className = 'lv' + Math.min(lv, 3);
-      const ch = document.createElement('b');
-      ch.textContent = cps[i] === '\n' ? '⏎' : cps[i];
-      const num = document.createElement('small');
-      num.textContent = lv;
-      cell.append(ch, num);
-      levels.append(cell);
-    }
-  }
+        <!-- card 4: mirroring + numbers -->
+        <div class="card wide">
+          <div class="card-head">
+            <h3>Mirroring &amp; embedded numbers <span class="ar-tag" lang="ar">الأقواس والأرقام</span></h3>
+            <p>Two things a left-to-right renderer always trips on. Left column: the raw string forced left-to-right. Right column: bidi-shaper.</p>
+          </div>
+          <div class="mirror-rows" id="mirror-rows"></div>
+        </div>
 
-  for (const id of ['direction', 'shape', 'ligatures', 'mirror', 'strip']) {
-    $(id).addEventListener('change', update);
-  }
-  $('input').addEventListener('input', update);
+        <!-- card 5: adapters -->
+        <div class="card wide">
+          <div class="card-head">
+            <h3>Drop-in for your renderer <span class="ar-tag" lang="ar">المحوّلات</span></h3>
+            <p>Structurally-typed adapters — they never import the host library, so they add nothing to your bundle. Same engine underneath.</p>
+          </div>
+          <div class="snips">
+            <div class="snip">
+              <div class="snip-head">jsPDF <span class="pkg">bidi-shaper/jspdf</span></div>
+              <pre><code><span class="k">import</span> { rtlText } <span class="k">from</span> <span class="s">"bidi-shaper/jspdf"</span>;
 
-  $('input').value = SAMPLES[2][1];
-  update();
-</script>
+doc.<span class="k">text</span>(rtlText(<span class="s">"مرحبا بالعالم"</span>), 20, 40);</code></pre>
+            </div>
+            <div class="snip">
+              <div class="snip-head">PDFKit <span class="pkg">bidi-shaper/pdfkit</span></div>
+              <pre><code><span class="k">import</span> { textBidi } <span class="k">from</span> <span class="s">"bidi-shaper/pdfkit"</span>;
+
+<span class="c">// shapes + reorders; features:[] so fontkit won't re-shape</span>
+textBidi(doc, <span class="s">"سلام دنیا"</span>, 72, 80);</code></pre>
+            </div>
+            <div class="snip">
+              <div class="snip-head">Canvas 2D <span class="pkg">bidi-shaper/canvas</span></div>
+              <pre><code><span class="k">import</span> { fillTextBidi } <span class="k">from</span> <span class="s">"bidi-shaper/canvas"</span>;
+
+fillTextBidi(ctx, <span class="s">"قائمة (أ)"</span>, x, y);</code></pre>
+            </div>
+            <div class="snip">
+              <div class="snip-head">three.js <span class="pkg">bidi-shaper/three</span></div>
+              <pre><code><span class="k">import</span> { prepareText } <span class="k">from</span> <span class="s">"bidi-shaper/three"</span>;
+
+<span class="k">const</span> label = prepareText(<span class="s">"اردو میں خوش آمدید"</span>);
+<span class="c">// → feed to TextGeometry / troika-text</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== CLOSING ============================== -->
+    <section class="container section closing">
+      <span class="closing-orn" aria-hidden="true">۞</span>
+      <h2>One string in, one string out.</h2>
+      <p class="section-sub">No DOM, no font files, no WASM. Just the two passes every other stack hides from you — done in pure TypeScript, ready for wherever your glyphs land.</p>
+      <div class="cta-row cta-center">
+        <a class="btn btn-primary" href="https://github.com/cc1a2b/bidi-shaper" target="_blank" rel="noopener">★ Star on GitHub</a>
+        <a class="btn btn-ghost" href="https://github.com/cc1a2b/bidi-shaper#readme" target="_blank" rel="noopener">Read the docs</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <p class="colophon" id="colophon">set in Amiri &amp; Readex Pro — composed by bidi-shaper</p>
+      <div class="footer-links">
+        <a href="https://github.com/cc1a2b/bidi-shaper" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/cc1a2b/bidi-shaper#readme" target="_blank" rel="noopener">Docs</a>
+        <a href="https://www.unicode.org/reports/tr9/" target="_blank" rel="noopener">UAX&nbsp;#9</a>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
