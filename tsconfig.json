@@ -24,6 +24,6 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["src", "scripts", "test", "demo", "*.ts", "*.config.ts"],
-  "exclude": ["dist", "node_modules", "scripts/.cache"]
+  "include": ["src", "scripts", "test", "*.ts", "*.config.ts"],
+  "exclude": ["dist", "node_modules", "scripts/.cache", "demo"]
 }

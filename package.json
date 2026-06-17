@@ -121,6 +121,9 @@
     "lint": "eslint .",
     "prepublishOnly": "npm run build"
   },
+  "overrides": {
+    "esbuild": "^0.28.1"
+  },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@types/node": "^22.10.2",
