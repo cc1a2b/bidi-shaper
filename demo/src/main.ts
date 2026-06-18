@@ -2,9 +2,9 @@ import "./style.css";
 import { render, analyze, shape, UNICODE_VERSION, type RenderOptions } from "bidi-shaper";
 
 /* ----------------------------------------------------------------
-   bidi-shaper demo — everything on this page is computed live by the
-   library source in ../src. The two passes (UAX #9 reordering + Arabic
-   shaping) run in your browser; nothing here is precomputed.
+   bidi-shaper demo — every glyph on this page is placed by the
+   library source in ../src. The two passes (Arabic shaping + UAX #9
+   reordering) run live in your browser; nothing here is precomputed.
    ---------------------------------------------------------------- */
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T => {
@@ -18,177 +18,168 @@ const h = (tag: string, cls?: string, text?: string): HTMLElement => {
   if (text != null) el.textContent = text;
   return el;
 };
-const esc = (s: string): string =>
-  s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
+const disp = (ch: string): string => (ch === " " ? "␣" : ch === "\n" ? "⏎" : ch === "\t" ? "⇥" : ch);
+const isPresentationForm = (cp: number): boolean =>
+  (cp >= 0xfb50 && cp <= 0xfdff) || (cp >= 0xfe70 && cp <= 0xfeff);
 
 /* ================================================================
-   THE LOOM — the signature element.
-   analyze() gives a level per code point plus visual↔logical maps.
-   We draw the stored (logical) string on top, the drawn (visual)
-   string below, and a thread from every character to where it ends
-   up — coloured by embedding level. Threads cross exactly where the
-   algorithm reorders. Nothing is faked: it is analyze() on screen.
+   HERO — kinetic shaping specimen.
+   One word, toggled between contextually-joined and isolated
+   (forced apart with ZWNJ) so the eye can see what shaping does.
    ================================================================ */
-const LOOM_RED = "#b3402e";
-const LOOM_LAPIS = "#37507a";
-const LOOM_MAX = 38;
-const LOOM_SAMPLES = ["مرحبا 2024", "سعر 250 ريال", "Hello مرحبا", "سنة ١٤٤٧", "قائمة (أ)"];
+const KW_JOINED = "الكتابة";
+const KW_BROKEN = [...KW_JOINED].join("‌"); // ZWNJ between letters → isolated forms
+const kw = $("kw");
+const kwState = $("kw-state");
+const kwNote = $("kw-note");
+let kwJoined = true;
 
-const loomHost = $("loom");
-const loomInput = $<HTMLInputElement>("loom-input");
-const loomSamplesWrap = $("loom-samples");
-const loomDir = $("loom-dir");
-let loomI = 0;
-let loomTimer = 0;
-let loomTouched = false;
-
-function buildLoom(input: string, animate: boolean): void {
-  const a = analyze(input);
-  let logical = [...input];
-  const visual = [...a.text];
-  const levels = a.levels;
-  if (logical.length > LOOM_MAX) logical = logical.slice(0, LOOM_MAX);
-  const n = logical.length;
-  const m = visual.length;
-
-  loomDir.innerHTML = n ? `base <b>${a.direction}</b> · ${m} glyph${m === 1 ? "" : "s"}` : "";
-  if (n === 0) {
-    loomHost.innerHTML = "";
-    return;
-  }
-
-  const availW = loomHost.clientWidth || 880;
-  const cols = Math.max(n, m, 1);
-  const tileGap = 6;
-  const cellW = Math.max(30, Math.min(54, Math.floor(availW / cols)));
-  const padX = 4;
-  const totalW = padX * 2 + cols * cellW;
-
-  const topLblY = 11;
-  const ltY = 26;
-  const tileH = 42;
-  const threadSpan = 126;
-  const vtY = ltY + tileH + threadSpan;
-  const vIdxY = vtY + tileH + 14;
-  const botLblY = vtY + tileH + 30;
-  const H = vtY + tileH + 38;
-
-  const cx = (c: number): number => padX + c * cellW + cellW / 2;
-  const r = (x: number): number => Math.round(x * 10) / 10;
-
-  const threads: string[] = [];
-  const ltiles: string[] = [];
-  const vtiles: string[] = [];
-
-  for (let i = 0; i < n; i++) {
-    const v = a.logicalToVisual[i] ?? -1;
-    const rtl = (levels[i] ?? 0) % 2 === 1;
-    const col = rtl ? LOOM_RED : LOOM_LAPIS;
-    const bx = padX + i * cellW + tileGap / 2;
-    const bw = cellW - tileGap;
-    const dim = v < 0 ? ' opacity="0.4"' : "";
-    ltiles.push(
-      `<g class="loom-tilegroup" data-li="${i}" data-vi="${v}"${dim}>` +
-        `<rect class="loom-tilebox" x="${r(bx)}" y="${ltY}" width="${r(bw)}" height="${tileH}" rx="4"/>` +
-        `<rect x="${r(bx)}" y="${ltY + tileH - 3}" width="${r(bw)}" height="3" rx="1.5" fill="${col}" opacity="${v < 0 ? 0.25 : 0.85}"/>` +
-        `<text class="loom-glyph" x="${r(cx(i))}" y="${r(ltY + tileH / 2)}">${esc(logical[i] ?? "")}</text>` +
-        `<text class="loom-idx" x="${r(cx(i))}" y="${topLblY + 8}">${i}</text>` +
-        `</g>`,
-    );
-    if (v >= 0 && v < m) {
-      const x1 = cx(i);
-      const y1 = ltY + tileH;
-      const x2 = cx(v);
-      const y2 = vtY;
-      const d = `M${r(x1)},${r(y1)} C${r(x1)},${r(y1 + threadSpan * 0.45)} ${r(x2)},${r(y2 - threadSpan * 0.45)} ${r(x2)},${r(y2)}`;
-      const delay = animate ? ` style="animation-delay:${(i * 0.035).toFixed(3)}s"` : "";
-      threads.push(`<path class="loom-thread" data-li="${i}" data-vi="${v}" pathLength="1" d="${d}" stroke="${col}"${delay}/>`);
-    }
-  }
-
-  for (let v = 0; v < m; v++) {
-    const i = a.visualToLogical[v] ?? 0;
-    const rtl = (levels[i] ?? 0) % 2 === 1;
-    const col = rtl ? LOOM_RED : LOOM_LAPIS;
-    const bx = padX + v * cellW + tileGap / 2;
-    const bw = cellW - tileGap;
-    const delay = animate ? ` style="animation-delay:${(0.22 + v * 0.03).toFixed(3)}s"` : "";
-    vtiles.push(
-      `<g class="loom-tilegroup" data-li="${i}" data-vi="${v}"${delay}>` +
-        `<rect class="loom-tilebox visual" x="${r(bx)}" y="${vtY}" width="${r(bw)}" height="${tileH}" rx="4"/>` +
-        `<rect x="${r(bx)}" y="${vtY}" width="${r(bw)}" height="3" rx="1.5" fill="${col}"/>` +
-        `<text class="loom-glyph" x="${r(cx(v))}" y="${r(vtY + tileH / 2)}">${esc(visual[v] ?? "")}</text>` +
-        `<text class="loom-idx" x="${r(cx(v))}" y="${vIdxY}" fill="${col}">${i}</text>` +
-        `</g>`,
-    );
-  }
-
-  const lblTop = `<text class="loom-rowlabel" x="${padX + 2}" y="${topLblY}">STORED — reading order&#160;&#160;<tspan class="accent">→</tspan></text>`;
-  const lblBot = `<text class="loom-rowlabel" x="${padX + 2}" y="${botLblY}">DRAWN — visual order, left-to-right&#160;&#160;<tspan class="accent">→</tspan></text>`;
-
-  loomHost.innerHTML =
-    `<svg class="loom-svg${animate ? " loom-anim" : ""}" width="${totalW}" height="${H}" viewBox="0 0 ${totalW} ${H}" role="img" aria-label="logical to visual order">` +
-    lblTop +
-    threads.join("") +
-    ltiles.join("") +
-    vtiles.join("") +
-    lblBot +
-    `</svg>`;
-  wireLoomHover();
+function paintKW(): void {
+  kw.textContent = kwJoined ? KW_JOINED : KW_BROKEN;
+  kw.classList.toggle("raw", !kwJoined);
+  kwState.textContent = kwJoined ? "shaped" : "raw";
+  kwState.classList.toggle("raw", !kwJoined);
+  kwNote.textContent = kwJoined ? "joined by context" : "isolated forms";
 }
 
-function wireLoomHover(): void {
-  const svg = loomHost.querySelector("svg");
-  if (!svg) return;
-  const all = svg.querySelectorAll<SVGElement>(".loom-thread, .loom-tilegroup");
-  const clear = (): void => all.forEach((el) => el.classList.remove("loom-faded", "loom-hot"));
-  all.forEach((el) => {
-    el.addEventListener("mouseenter", () => {
-      const li = el.getAttribute("data-li");
-      const vi = el.getAttribute("data-vi");
-      if (li == null || vi == null || vi === "-1") return;
-      all.forEach((other) => {
-        const match = other.getAttribute("data-li") === li && other.getAttribute("data-vi") === vi;
-        other.classList.toggle("loom-hot", match);
-        other.classList.toggle("loom-faded", !match);
-      });
+/* ================================================================
+   THE PIPELINE THEATER — the signature element.
+   The same line shown at three stations: STORED (logical) →
+   SHAPED (shape(), still logical) → DRAWN (render(), visual order).
+   Every tile keeps its stored index, so you can trace where each
+   code point lands. Coloured by embedding level from analyze().
+   ================================================================ */
+const PIPE_SAMPLES = ["مرحبا 2024", "سعر 250 ريال", "Hello مرحبا!", "قائمة (أ)", "ولا أحد"];
+
+const pipeInput = $<HTMLInputElement>("pipe-input");
+const pipeSamples = $("pipe-samples");
+const pipeDir = $("pipe-dir");
+const pipePlay = $("pipe-play");
+const stations = $("stations");
+const stStored = $("stage-stored");
+const stShaped = $("stage-shaped");
+const stDrawn = $("stage-drawn");
+
+let pipeI = 0;
+let pipeTimer = 0;
+let pipeTouched = false;
+
+interface ChipOpts {
+  cls?: string;
+  li?: number;
+  vi?: number;
+  idx?: number;
+  d?: number | null;
+}
+function makeChip(glyph: string, o: ChipOpts): HTMLElement {
+  const c = h("div", "chip" + (o.cls ? " " + o.cls : ""));
+  c.dir = "ltr";
+  if (o.d != null) c.style.setProperty("--d", o.d.toFixed(3) + "s");
+  if (o.li != null) c.dataset.li = String(o.li);
+  if (o.vi != null) c.dataset.vi = String(o.vi);
+  c.append(h("span", "chip-g", glyph));
+  if (o.idx != null) c.append(h("span", "chip-i", String(o.idx)));
+  return c;
+}
+
+function buildPipeline(input: string, animate: boolean): void {
+  const a = analyze(input);
+  const stored = [...input];
+  const shaped = [...shape(input)];
+  const drawn = [...a.text];
+
+  pipeDir.innerHTML = stored.length
+    ? `base <b>${a.direction}</b> · ${stored.length}&#8201;→&#8201;${drawn.length} glyphs`
+    : "";
+
+  stStored.replaceChildren();
+  stShaped.replaceChildren();
+  stDrawn.replaceChildren();
+  if (stored.length === 0) return;
+
+  stored.forEach((ch, i) => {
+    const lv = a.levels[i] ?? 0;
+    const removed = (a.logicalToVisual[i] ?? -1) < 0;
+    const cls = (lv % 2 ? "rtl" : "ltr") + (removed ? " gone" : "");
+    stStored.append(makeChip(disp(ch), { cls, li: i, idx: i, d: animate ? i * 0.025 : null }));
+  });
+
+  shaped.forEach((ch, i) => {
+    const cp = ch.codePointAt(0) ?? 0;
+    const cls = "shaped" + (isPresentationForm(cp) ? " joined" : "");
+    stShaped.append(makeChip(disp(ch), { cls, d: animate ? 0.2 + i * 0.025 : null }));
+  });
+
+  drawn.forEach((ch, v) => {
+    const li = a.visualToLogical[v] ?? 0;
+    const lv = a.levels[li] ?? 0;
+    const cls = "drawn " + (lv % 2 ? "rtl" : "ltr");
+    stDrawn.append(makeChip(disp(ch), { cls, li, vi: v, idx: li, d: animate ? 0.42 + v * 0.025 : null }));
+  });
+
+  wirePipeHover();
+  if (animate) {
+    stations.classList.remove("run");
+    void stations.offsetWidth; // reflow so the animation restarts
+    stations.classList.add("run");
+  } else {
+    stations.classList.remove("run");
+  }
+}
+
+function clearTrace(): void {
+  stStored.classList.remove("tracing");
+  stDrawn.classList.remove("tracing");
+  stations.querySelectorAll(".chip.hot").forEach((c) => c.classList.remove("hot"));
+}
+function wirePipeHover(): void {
+  const traceable = stations.querySelectorAll<HTMLElement>(".chip[data-li]");
+  traceable.forEach((c) => {
+    c.addEventListener("mouseenter", () => {
+      const li = c.dataset.li;
+      stStored.classList.add("tracing");
+      stDrawn.classList.add("tracing");
+      traceable.forEach((o) => o.classList.toggle("hot", o.dataset.li === li));
     });
   });
-  svg.addEventListener("mouseleave", clear);
+}
+stations.addEventListener("mouseleave", clearTrace);
+
+function setPipe(text: string, animate: boolean): void {
+  pipeInput.value = text;
+  buildPipeline(text, animate);
+  [...pipeSamples.children].forEach((b) => b.classList.toggle("active", b.textContent === text));
+}
+function touchPipe(): void {
+  if (pipeTouched) return;
+  pipeTouched = true;
+  window.clearInterval(pipeTimer);
 }
 
-function setLoom(text: string, animate: boolean): void {
-  loomInput.value = text;
-  buildLoom(text, animate);
-  [...loomSamplesWrap.children].forEach((b) => b.classList.toggle("active", b.textContent === text));
-}
-function touchLoom(): void {
-  if (loomTouched) return;
-  loomTouched = true;
-  window.clearInterval(loomTimer);
-}
-
-for (const s of LOOM_SAMPLES) {
+for (const s of PIPE_SAMPLES) {
   const b = h("button", undefined, s);
   b.setAttribute("dir", "auto");
   b.addEventListener("click", () => {
-    touchLoom();
-    setLoom(s, true);
+    touchPipe();
+    setPipe(s, true);
   });
-  loomSamplesWrap.append(b);
+  pipeSamples.append(b);
 }
-loomInput.addEventListener("input", () => {
-  touchLoom();
-  buildLoom(loomInput.value, false);
-  [...loomSamplesWrap.children].forEach((b) => b.classList.remove("active"));
+pipeInput.addEventListener("input", () => {
+  touchPipe();
+  buildPipeline(pipeInput.value, false);
+  [...pipeSamples.children].forEach((b) => b.classList.remove("active"));
 });
-loomInput.addEventListener("focus", touchLoom);
+pipeInput.addEventListener("focus", touchPipe);
+pipePlay.addEventListener("click", () => {
+  touchPipe();
+  buildPipeline(pipeInput.value, true);
+});
 
 /* ---------- canvas: draw each code point left-to-right ----------
-   This is exactly how a shaping-unaware, bidi-unaware renderer behaves:
-   one glyph after another. Feed it the raw string → broken. Feed it
-   render(string) → correct, because the string is already shaped and
-   in visual order. */
+   Exactly how a shaping-unaware, bidi-unaware renderer behaves:
+   one glyph after another. Raw string → broken. render(string) →
+   correct, because the string is already shaped and in visual order. */
 const CANVAS_FONT = '30px Amiri, "Noto Naskh Arabic", "Segoe UI", serif';
 const canvasJobs = new Map<HTMLCanvasElement, { text: string; color: string }>();
 
@@ -218,7 +209,7 @@ const redrawAll = (): void => {
 };
 
 /* ---------- proof sheet (auto-cycling before/after, on the dark band) ---------- */
-const PROOF_INK = "#f0e7d4";
+const PROOF_INK = "#f0ebdd";
 const PROOF = [
   "مرحبا بالعالم",
   "بِسْمِ اللَّهِ",
@@ -256,8 +247,8 @@ function restartProof(): void {
   }, 2900);
 }
 
-/* ---------- the bench (interactive pipeline) ---------- */
-const INK = "#1b1710";
+/* ---------- the workbench: compositor ---------- */
+const INK = "#16140f";
 const BENCH_SAMPLES: [string, string][] = [
   ["Arabic", "مرحبا بالعالم"],
   ["Persian", "سلام دنیا ۱۲۳"],
@@ -316,8 +307,7 @@ function updateLevels(): void {
     const lv = levels[i] ?? 0;
     const cls = lv % 2 === 1 ? " rtl" : lv >= 2 ? " l2" : "";
     const cell = h("div", "lvl" + cls);
-    const glyph = ch === " " ? "␣" : ch === "\n" ? "⏎" : ch;
-    cell.append(h("span", "g", glyph));
+    cell.append(h("span", "g", disp(ch)));
     cell.append(h("span", "n", `${lv % 2 ? "←" : "→"} ${lv}`));
     lvlStrip.append(cell);
     i++;
@@ -375,8 +365,7 @@ for (const src of MIRROR) {
   const row = h("div", "mirror-row");
 
   const naive = h("div");
-  naive.append(h("span", "lbl", "✗ naive (raw, left-to-right)"));
-  naive.append(document.createElement("br"));
+  naive.append(h("span", "lbl", "✗ naive · forced left-to-right"));
   naive.append(ltrOverride(h("span", "draw", src)));
 
   const good = h("div");
@@ -384,7 +373,6 @@ for (const src of MIRROR) {
   const lbl = h("span", "lbl", "✓ render()");
   lbl.style.color = "var(--green)";
   good.append(lbl);
-  good.append(document.createElement("br"));
   good.append(ltrOverride(h("span", "draw", render(src))));
 
   row.append(naive, good);
@@ -409,19 +397,26 @@ wireCopy($("copy-install"), () => "npm install bidi-shaper");
 wireCopy($("bench-copy"), () => benchOut.textContent ?? "");
 
 /* ---------- colophon ---------- */
-$("colophon").textContent = `set in Fraunces, Amiri & Readex Pro · composed live by bidi-shaper · Unicode ${UNICODE_VERSION}`;
+$("colophon").textContent =
+  `set in Fraunces, Space Grotesk, Amiri & Reem Kufi · composed live by bidi-shaper · Unicode ${UNICODE_VERSION}`;
 
 /* ---------- boot ---------- */
 function boot(): void {
-  setLoom(LOOM_SAMPLES[0] ?? "", true);
-  loomTimer = window.setInterval(() => {
-    if (loomTouched) {
-      window.clearInterval(loomTimer);
+  paintKW();
+  window.setInterval(() => {
+    kwJoined = !kwJoined;
+    paintKW();
+  }, 2300);
+
+  setPipe(PIPE_SAMPLES[0] ?? "", true);
+  pipeTimer = window.setInterval(() => {
+    if (pipeTouched) {
+      window.clearInterval(pipeTimer);
       return;
     }
-    loomI = (loomI + 1) % LOOM_SAMPLES.length;
-    setLoom(LOOM_SAMPLES[loomI] ?? "", true);
-  }, 3400);
+    pipeI = (pipeI + 1) % PIPE_SAMPLES.length;
+    setPipe(PIPE_SAMPLES[pipeI] ?? "", true);
+  }, 3600);
 
   showProof();
   restartProof();
@@ -431,16 +426,13 @@ function boot(): void {
 }
 boot();
 
-// Arabic fonts change glyph metrics — redraw once they load.
+// Arabic fonts change glyph metrics — redraw the canvases once they load.
 document.fonts?.ready.then(() => {
   redrawAll();
-  if (!loomTouched) buildLoom(loomInput.value, false);
+  if (!pipeTouched) buildPipeline(pipeInput.value, false);
 });
 let resizeTimer = 0;
 window.addEventListener("resize", () => {
   window.clearTimeout(resizeTimer);
-  resizeTimer = window.setTimeout(() => {
-    redrawAll();
-    buildLoom(loomInput.value, false);
-  }, 140);
+  resizeTimer = window.setTimeout(redrawAll, 140);
 });

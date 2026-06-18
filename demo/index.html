@@ -6,7 +6,7 @@
   <title>bidi-shaper — logical order in, visual order out</title>
   <meta name="description" content="Logical→visual Unicode BiDi (UAX #9) reordering + Arabic contextual shaping in pure TypeScript. One string in, one visual-order string out — ready for jsPDF, pdfmake, PDFKit, canvas, three.js. Zero dependencies." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta name="theme-color" content="#161109" />
+  <meta name="theme-color" content="#16140f" />
 
   <meta property="og:type" content="website" />
   <meta property="og:title" content="bidi-shaper — logical order in, visual order out" />
@@ -14,292 +14,352 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Readex+Pro:wght@200..600&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Reem+Kufi:wght@400;500;600;700&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <div class="bg-pattern" aria-hidden="true"></div>
-
-  <header class="nav">
-    <div class="container nav-inner">
+  <!-- ============================== INDEX BAR ============================== -->
+  <header class="topbar">
+    <div class="container topbar-inner">
       <a class="brand" href="#top">
-        <span class="brand-mark"><span class="lam">ل</span>ا</span>
-        <span class="brand-name">bidi-shaper</span>
+        <span class="brand-glyph" aria-hidden="true">ب</span>
+        <span class="brand-text">bidi&#8203;-shaper<sup>®</sup></span>
       </a>
-      <nav class="nav-links">
-        <a href="#loom">The loom</a>
-        <a href="#problem">The problem</a>
-        <a href="#bench">Try it</a>
-        <a class="btn btn-ghost btn-sm" href="https://github.com/cc1a2b/bidi-shaper" target="_blank" rel="noopener">
-          <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-          Star
-        </a>
+      <nav class="index-nav" aria-label="Sections">
+        <a href="#pipeline"><span class="ix">01</span> Pipeline</a>
+        <a href="#proof"><span class="ix">02</span> Proof</a>
+        <a href="#faults"><span class="ix">03</span> Faults</a>
+        <a href="#workbench"><span class="ix">04</span> Workbench</a>
       </nav>
+      <a class="ghub" href="https://github.com/cc1a2b/bidi-shaper" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        <span>Star</span>
+      </a>
     </div>
   </header>
 
   <main id="top">
-    <!-- ============================== HERO + LOOM ============================== -->
-    <section id="loom" class="hero container">
-      <p class="eyebrow">UAX&nbsp;#9 BiDi <b>·</b> Arabic shaping <b>·</b> zero dependencies <b>·</b> MIT</p>
-      <h1>Logical order in,<br /><span class="swap">visual order out.</span></h1>
-      <p class="hero-lead">Text is stored in the order you read it and drawn in the order you see it. Those are not the same order. bidi-shaper is the loom between them.</p>
-      <p class="hero-ar" lang="ar" dir="rtl">يُخزَّن النصُّ بترتيب القراءة ويُرسَم بترتيب الرؤية — وهذه المسافة بينهما هي عملي.</p>
+    <!-- ============================== HERO ============================== -->
+    <section class="hero container">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="dot"></span> a logical&#8202;→&#8202;visual type engine, in pure TypeScript</p>
+          <h1 class="hero-h1">Stored in <span class="u">reading</span> order.<br />Drawn in <span class="hl">seeing</span> order.</h1>
+          <p class="hero-lead">A string is kept in the order you read it, and painted in the order you see it. Those are two different orders. bidi-shaper does the whole crossing — Arabic shaping, then UAX&nbsp;#9 reordering, then mirroring — and hands back a flat, visual-order string.</p>
 
-      <div class="hero-actions">
-        <div class="install-box" id="install">
-          <code><span class="dollar">$ </span>npm install bidi-shaper</code>
-          <button class="btn btn-copy" id="copy-install" type="button">Copy</button>
+          <div class="hero-cta">
+            <div class="install" id="install">
+              <code><span class="prompt">$</span> npm i bidi-shaper</code>
+              <button class="copy" id="copy-install" type="button" aria-label="Copy install command">Copy</button>
+            </div>
+            <a class="btn-star" href="https://github.com/cc1a2b/bidi-shaper" target="_blank" rel="noopener">★ Star</a>
+          </div>
+
+          <ul class="hero-facts">
+            <li><b>0</b> runtime deps</li>
+            <li><b>~15 kB</b> min+gzip</li>
+            <li><b>861,948</b> conformance cases</li>
+            <li><b>MIT</b> licensed</li>
+          </ul>
         </div>
-        <a class="btn btn-primary" href="https://github.com/cc1a2b/bidi-shaper" target="_blank" rel="noopener">★ Star on GitHub</a>
+
+        <aside class="hero-specimen" aria-label="Live contextual-shaping specimen">
+          <div class="spec-card">
+            <div class="spec-top">
+              <span class="spec-cp">U+0627 … U+0629</span>
+              <span class="spec-state" id="kw-state">shaped</span>
+            </div>
+            <div class="spec-word" id="kw" lang="ar" dir="rtl">الكتابة</div>
+            <div class="spec-foot">
+              <span>one word, seven letters</span>
+              <span class="spec-toggle" id="kw-note">joined by context</span>
+            </div>
+          </div>
+          <p class="spec-cap">Every letter chooses one of four shapes from its neighbours. Watch it fall apart without shaping — then snap back.</p>
+        </aside>
       </div>
+    </section>
 
-      <!-- THE LOOM -->
-      <div class="loom-wrap" aria-label="Live diagram: each character re-routed from stored order to drawn order">
-        <div class="loom-bar">
-          <span class="ttl">The loom <span lang="ar">الطِّراز</span></span>
-          <span class="spacer"></span>
-          <span class="loom-dir" id="loom-dir"></span>
+    <!-- ============================== MARQUEE ============================== -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>logical in</span><span class="sep">✶</span><span lang="ar">الكتابة</span><span class="sep">✶</span><span>visual out</span><span class="sep">✶</span><span class="num">١٤٤٧</span><span class="sep">✶</span><span>UAX&nbsp;#9</span><span class="sep">✶</span><span lang="ar">الطِّباعة</span><span class="sep">✶</span><span>shape · reorder · mirror</span><span class="sep">✶</span><span>zero deps</span><span class="sep">✶</span>
+        <span>logical in</span><span class="sep">✶</span><span lang="ar">الكتابة</span><span class="sep">✶</span><span>visual out</span><span class="sep">✶</span><span class="num">١٤٤٧</span><span class="sep">✶</span><span>UAX&nbsp;#9</span><span class="sep">✶</span><span lang="ar">الطِّباعة</span><span class="sep">✶</span><span>shape · reorder · mirror</span><span class="sep">✶</span><span>zero deps</span><span class="sep">✶</span>
+      </div>
+    </div>
+
+    <!-- ============================== 01 · PIPELINE THEATER ============================== -->
+    <section id="pipeline" class="section container">
+      <header class="sec-head">
+        <p class="tag"><span class="tag-no">01</span> The pipeline</p>
+        <h2>Three stations, one&nbsp;string</h2>
+        <p class="sec-lead">Type a line. It travels down through the two passes the library runs — <code>shape()</code> joins the Arabic letters, then <code>render()</code> reorders the runs and flips the brackets. Each tile keeps the index it had when it was <em>stored</em>, so you can watch where it lands once it is <em>drawn</em>.</p>
+      </header>
+
+      <div class="theater">
+        <div class="theater-bar">
+          <div class="pipe-field">
+            <span class="pipe-prompt" aria-hidden="true">❯</span>
+            <input type="text" id="pipe-input" dir="auto" spellcheck="false" autocomplete="off" aria-label="Pipeline input" />
+          </div>
+          <button class="pipe-replay" id="pipe-play" type="button">↻ replay</button>
+          <span class="pipe-dir" id="pipe-dir"></span>
+        </div>
+        <div class="theater-samples" id="pipe-samples"></div>
+
+        <div class="stations" id="stations">
+          <div class="station">
+            <div class="station-head"><span class="st-no">①</span> Stored <em>— logical order, as you typed it</em></div>
+            <div class="chips" id="stage-stored" dir="ltr"></div>
+          </div>
+
+          <div class="station-join"><span class="join-line"></span><span class="join-tag">shape()</span><span class="join-line"></span></div>
+
+          <div class="station">
+            <div class="station-head"><span class="st-no">②</span> Shaped <em>— still logical, letters now joined</em></div>
+            <div class="chips" id="stage-shaped" dir="ltr"></div>
+          </div>
+
+          <div class="station-join"><span class="join-line"></span><span class="join-tag">render()</span><span class="join-line"></span></div>
+
+          <div class="station">
+            <div class="station-head"><span class="st-no">③</span> Drawn <em>— visual order, left&#8209;to&#8209;right&nbsp;→</em></div>
+            <div class="chips" id="stage-drawn" dir="ltr"></div>
+          </div>
         </div>
 
-        <div class="loom-input-row">
-          <label for="loom-input">weave</label>
-          <input type="text" id="loom-input" dir="auto" spellcheck="false" autocomplete="off" />
-        </div>
-
-        <div class="loom-stage">
-          <div id="loom"></div>
-        </div>
-
-        <div class="loom-foot">
-          <span class="thread-key"><i class="rtl"></i> right-to-left run (odd level)</span>
-          <span class="thread-key"><i class="ltr"></i> left-to-right run (even level)</span>
-          <span class="spacer"></span>
-          <div class="loom-samples" id="loom-samples"></div>
+        <div class="theater-key">
+          <span class="k-item"><i class="sw rtl"></i> RTL run · odd level</span>
+          <span class="k-item"><i class="sw ltr"></i> LTR run · even level</span>
+          <span class="k-item"><i class="sw gone"></i> merged / removed</span>
+          <span class="k-hint">hover a tile to trace it across stations</span>
         </div>
       </div>
     </section>
 
-    <!-- ============================== DARK BAND: proof + numbers ============================== -->
-    <section class="band">
+    <!-- ============================== 02 · PROOF (dark) ============================== -->
+    <section id="proof" class="band">
       <div class="container">
-        <p class="kicker"><span lang="ar">٠١</span> · what a naive renderer sees</p>
-        <p class="pull">A renderer that places glyphs <em>one after another</em> — jsPDF, a bitmap font, a game engine, a plotter — runs <em>neither</em> pass. bidi-shaper runs <span class="ar" lang="ar">الاثنتين</span> both, and hands back a plain string.</p>
+        <header class="sec-head dark">
+          <p class="tag"><span class="tag-no">02</span> The proof</p>
+          <h2>What a glyph-by-glyph<br />renderer actually draws</h2>
+          <p class="sec-lead">jsPDF, a bitmap font, a plotter, a game engine — they place one glyph after another and run <em>neither</em> pass. Feed the raw string and it breaks. Feed <code>render(string)</code> and the very same renderer is correct, because the work already happened.</p>
+        </header>
 
-        <div class="proof-band">
-          <div class="proof" aria-label="The same string drawn by a naive renderer, before and after bidi-shaper">
-            <div class="proof-head">
-              <span class="proof-stamp" lang="ar">قبل · بعد</span>
-              <em>each glyph placed left-to-right, in the order it appears in the string</em>
+        <div class="proof-grid">
+          <div class="proof-panel">
+            <div class="proof-stage">
+              <div class="proof-label"><span class="tk bad">raw string</span> placed left-to-right</div>
+              <canvas id="proof-raw"></canvas>
             </div>
-            <div class="proof-body">
-              <div class="stage">
-                <div class="stage-label">the raw string <span class="tick bad">naive render</span></div>
-                <canvas class="stage-canvas" id="proof-raw"></canvas>
-              </div>
-              <div class="stage">
-                <div class="stage-label">render(string) <span class="tick good">bidi-shaper</span></div>
-                <canvas class="stage-canvas" id="proof-fixed"></canvas>
-              </div>
+            <div class="proof-rule"><span lang="ar">قبل · بعد</span><i></i></div>
+            <div class="proof-stage">
+              <div class="proof-label"><span class="tk good">render()</span> placed left-to-right</div>
+              <canvas id="proof-fixed"></canvas>
             </div>
             <div class="proof-dots" id="proof-dots"></div>
           </div>
 
-          <div class="proof-side">
-            <div class="stat-num" id="stat-conf">861,948</div>
-            <p>official UAX&nbsp;#9 conformance cases pass on <strong>every single build</strong>. Both Unicode test suites stay pinned at 100%.</p>
-            <div class="mini-stats">
-              <div><strong>~15 kB</strong><span>min + gzip · ESM + CJS + d.ts</span></div>
-              <div><strong>5</strong><span>renderer adapters</span></div>
-              <div><strong>0</strong><span>runtime dependencies</span></div>
-            </div>
+          <div class="proof-figure">
+            <div class="big-num">861,948</div>
+            <p class="big-cap">official UAX&nbsp;#9 conformance cases pass on <strong>every build</strong>. Both Unicode suites are pinned at 100%.</p>
+            <dl class="proof-stats">
+              <div><dt>~15 kB</dt><dd>ESM · CJS · d.ts</dd></div>
+              <div><dt>5</dt><dd>renderer adapters</dd></div>
+              <div><dt>0</dt><dd>runtime deps</dd></div>
+            </dl>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ============================== PROBLEM: errata ============================== -->
-    <section id="problem" class="container section">
-      <p class="kicker"><span lang="ar">٠٢</span> · the errata</p>
-      <h2>Four things break at once</h2>
-      <p class="section-sub">Give a glyph-by-glyph renderer logical-order Arabic and it gets every one of these wrong. bidi-shaper fixes all of them before the first glyph is drawn.</p>
-      <div class="table-wrap">
-        <table class="compare">
-          <thead><tr><th>The text</th><th>Drawn naively, left-to-right</th><th>Through bidi-shaper</th></tr></thead>
-          <tbody>
-            <tr>
-              <td>Cursive joining</td>
-              <td class="bad">isolated, disconnected letters — ك ت ا ب</td>
-              <td class="good">joined to context — <span class="draw" dir="rtl">كتاب</span></td>
-            </tr>
-            <tr>
-              <td>Reading direction</td>
-              <td class="bad">runs come out reversed, end-first</td>
-              <td class="good">RTL runs flow right-to-left, LTR stays LTR</td>
-            </tr>
-            <tr>
-              <td>Numbers in RTL</td>
-              <td class="bad">drift to the wrong end of the line</td>
-              <td class="good">stay left-to-right, in place — <span class="draw" dir="rtl">سنة ١٤٤٧</span></td>
-            </tr>
-            <tr>
-              <td>Brackets &amp; quotes</td>
-              <td class="bad">( ) point the wrong way</td>
-              <td class="good">mirrored on RTL runs (rule L4)</td>
-            </tr>
-            <tr>
-              <td>lam + alef</td>
-              <td class="bad">two stray letters — ل&nbsp;ا</td>
-              <td class="good">one ligature — <span class="draw">ﻻ</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- ============================== 03 · FAULTS ============================== -->
+    <section id="faults" class="section container">
+      <header class="sec-head">
+        <p class="tag"><span class="tag-no">03</span> The faults</p>
+        <h2>Five faults, fixed before<br />the first glyph lands</h2>
+        <p class="sec-lead">Hand logical-order Arabic to a renderer that can&rsquo;t shape or reorder and it gets every one of these wrong. bidi-shaper resolves all five in the string it returns.</p>
+      </header>
+
+      <ol class="faults">
+        <li class="fault">
+          <span class="fault-no">01</span>
+          <div class="fault-body">
+            <h3>Cursive joining</h3>
+            <p class="naive"><span class="lbl">naive</span> isolated, disconnected letters — <span dir="rtl">ك ت ا ب</span></p>
+            <p class="fixed"><span class="lbl">render()</span> joined to context — <span class="draw" dir="rtl">كتاب</span></p>
+          </div>
+        </li>
+        <li class="fault">
+          <span class="fault-no">02</span>
+          <div class="fault-body">
+            <h3>Reading direction</h3>
+            <p class="naive"><span class="lbl">naive</span> runs come out reversed, end-first</p>
+            <p class="fixed"><span class="lbl">render()</span> RTL runs flow right-to-left, LTR stays LTR</p>
+          </div>
+        </li>
+        <li class="fault">
+          <span class="fault-no">03</span>
+          <div class="fault-body">
+            <h3>Numbers inside RTL</h3>
+            <p class="naive"><span class="lbl">naive</span> drift to the wrong end of the line</p>
+            <p class="fixed"><span class="lbl">render()</span> stay left-to-right, in place — <span class="draw" dir="rtl">سنة ١٤٤٧</span></p>
+          </div>
+        </li>
+        <li class="fault">
+          <span class="fault-no">04</span>
+          <div class="fault-body">
+            <h3>Brackets &amp; quotes</h3>
+            <p class="naive"><span class="lbl">naive</span> ( ) point the wrong way</p>
+            <p class="fixed"><span class="lbl">render()</span> mirrored on RTL runs — rule&nbsp;L4</p>
+          </div>
+        </li>
+        <li class="fault">
+          <span class="fault-no">05</span>
+          <div class="fault-body">
+            <h3>Lam + alef</h3>
+            <p class="naive"><span class="lbl">naive</span> two stray letters — <span dir="rtl">ل ا</span></p>
+            <p class="fixed"><span class="lbl">render()</span> one ligature — <span class="draw">ﻻ</span></p>
+          </div>
+        </li>
+      </ol>
     </section>
 
-    <!-- ============================== PLAYGROUND ============================== -->
-    <section id="bench" class="container section">
-      <p class="kicker"><span lang="ar">٠٣</span> · the bench</p>
-      <h2>Set your own line</h2>
-      <p class="section-sub">Everything below is computed live by the library source in your browser — no precomputed strings. Type anything; the canvases place each code point left-to-right, exactly like a renderer that can't shape or reorder.</p>
+    <!-- ============================== 04 · WORKBENCH ============================== -->
+    <section id="workbench" class="section container">
+      <header class="sec-head">
+        <p class="tag"><span class="tag-no">04</span> The workbench</p>
+        <h2>Set your own line</h2>
+        <p class="sec-lead">Everything below runs the library source in your browser — nothing is precomputed. The canvases place each code point left-to-right, exactly like a renderer that can&rsquo;t shape or reorder.</p>
+      </header>
 
-      <div class="grid">
-        <!-- card 1: the bench -->
-        <div class="card wide accent">
-          <div class="card-head">
-            <h3>The compositor's bench <span class="ar-tag" lang="ar">المنضدة</span></h3>
-            <p>One call — <code>render(text, options)</code> — shapes, reorders, and mirrors. Copy the output straight into <code>doc.text(...)</code>.</p>
-          </div>
-
-          <div class="sample-row" id="bench-samples"></div>
+      <div class="bench-layout">
+        <!-- compositor -->
+        <article class="panel panel-lead">
+          <header class="panel-head">
+            <h3>The compositor <span class="ar-tag" lang="ar">المنضدة</span></h3>
+            <p>One call — <code>render(text, options)</code> — shapes, reorders and mirrors. Copy the result straight into <code>doc.text(…)</code>.</p>
+          </header>
+          <div class="chip-samples" id="bench-samples"></div>
           <textarea id="bench-input" dir="auto" spellcheck="false" rows="2"></textarea>
-
-          <div class="controls">
-            <label class="field">
-              <span>base direction</span>
-              <select id="opt-dir"><option value="auto">auto (first-strong)</option><option value="rtl">rtl</option><option value="ltr">ltr</option></select>
+          <div class="opts">
+            <label class="opt-select"><span>base</span>
+              <select id="opt-dir"><option value="auto">auto</option><option value="rtl">rtl</option><option value="ltr">ltr</option></select>
             </label>
-            <label class="switch-field"><input type="checkbox" id="opt-shape" checked /><span class="switch"></span>shape Arabic</label>
-            <label class="switch-field"><input type="checkbox" id="opt-liga" checked /><span class="switch"></span>lam-alef ligatures</label>
-            <label class="switch-field"><input type="checkbox" id="opt-mirror" checked /><span class="switch"></span>mirror brackets</label>
-            <label class="switch-field"><input type="checkbox" id="opt-strip" /><span class="switch"></span>strip tashkeel</label>
+            <label class="opt-toggle"><input type="checkbox" id="opt-shape" checked /><i></i>shape</label>
+            <label class="opt-toggle"><input type="checkbox" id="opt-liga" checked /><i></i>ligatures</label>
+            <label class="opt-toggle"><input type="checkbox" id="opt-mirror" checked /><i></i>mirror</label>
+            <label class="opt-toggle"><input type="checkbox" id="opt-strip" /><i></i>strip tashkeel</label>
           </div>
-
-          <div class="bench-stages">
-            <div class="stage">
-              <div class="stage-label">your string, glyph-by-glyph <span class="tick bad">broken</span></div>
-              <canvas class="stage-canvas" id="bench-raw"></canvas>
+          <div class="bench-canvases">
+            <div class="bc-stage">
+              <div class="bc-label">raw, glyph-by-glyph <span class="tk bad">broken</span></div>
+              <canvas id="bench-raw"></canvas>
             </div>
-            <div class="stage">
-              <div class="stage-label">render() output, same renderer <span class="tick good">set</span></div>
-              <canvas class="stage-canvas" id="bench-fixed"></canvas>
+            <div class="bc-stage">
+              <div class="bc-label">render() output <span class="tk good">set</span></div>
+              <canvas id="bench-fixed"></canvas>
             </div>
           </div>
-
-          <div class="out-row">
-            <code class="out-string" id="bench-out"></code>
-            <button class="btn btn-copy" id="bench-copy" type="button">Copy</button>
+          <div class="bench-out">
+            <code id="bench-out"></code>
+            <button class="copy" id="bench-copy" type="button">Copy</button>
           </div>
-          <p class="caption">The output is in <b>visual order</b>: its code points are already shaped presentation forms in drawing sequence. Hand it to any renderer that lays glyphs out left-to-right.</p>
-        </div>
+          <p class="panel-note">The output is in <b>visual order</b> — already-shaped presentation forms in drawing sequence. Hand it to anything that lays glyphs out left-to-right.</p>
+        </article>
 
-        <!-- card 2: embedding levels -->
-        <div class="card">
-          <div class="card-head">
+        <!-- levels -->
+        <article class="panel">
+          <header class="panel-head">
             <h3>Embedding levels <span class="ar-tag" lang="ar">المستويات</span></h3>
-            <p><code>analyze(text)</code> resolves a level per code point. Even is left-to-right, odd is right-to-left — the spine of the algorithm, and the colours on the loom.</p>
-          </div>
+            <p><code>analyze(text)</code> resolves a level per code point. Even is LTR, odd is RTL — the spine of UAX&nbsp;#9.</p>
+          </header>
           <input type="text" id="lvl-input" dir="auto" spellcheck="false" />
           <div class="levels" id="lvl-strip"></div>
           <div class="legend">
-            <span><i class="swatch even"></i> even = LTR</span>
-            <span><i class="swatch odd"></i> odd = RTL</span>
-            <span id="lvl-dir"></span>
+            <span><i class="sw ltr"></i> even · LTR</span>
+            <span><i class="sw rtl"></i> odd · RTL</span>
+            <span class="legend-dir" id="lvl-dir"></span>
           </div>
-        </div>
+        </article>
 
-        <!-- card 3: shaping -->
-        <div class="card">
-          <div class="card-head">
+        <!-- shaping -->
+        <article class="panel">
+          <header class="panel-head">
             <h3>Contextual shaping <span class="ar-tag" lang="ar">التشكيل</span></h3>
-            <p>One Arabic letter is four glyphs, chosen by its neighbours. Pick a letter to see the forms <code>shape()</code> substitutes.</p>
-          </div>
-          <div class="segmented sample-row" id="shape-letters"></div>
+            <p>One letter, four glyphs, chosen by neighbours. Pick a letter to see what <code>shape()</code> substitutes.</p>
+          </header>
+          <div class="letter-row" id="shape-letters"></div>
           <div class="specimen" id="specimen"></div>
-          <div class="liga-note">
-            <span>And the special case:</span>
-            <span dir="rtl">ل</span><span class="liga-arrow">+</span><span dir="rtl">ا</span>
-            <span class="liga-arrow">→</span><b>ﻻ</b>
-            <span>— lam + alef become one ligature.</span>
-          </div>
-        </div>
+          <p class="liga-note"><span dir="rtl">ل</span> + <span dir="rtl">ا</span> <span class="arrow">→</span> <b>ﻻ</b> &nbsp;lam and alef collapse into one ligature.</p>
+        </article>
 
-        <!-- card 4: mirroring + numbers -->
-        <div class="card wide">
-          <div class="card-head">
+        <!-- mirror -->
+        <article class="panel panel-wide">
+          <header class="panel-head">
             <h3>Mirroring &amp; embedded numbers <span class="ar-tag" lang="ar">الأقواس والأرقام</span></h3>
-            <p>Two things a left-to-right renderer always trips on. Left: the raw string forced left-to-right. Right: bidi-shaper.</p>
-          </div>
+            <p>Left: the raw string forced left-to-right. Right: through bidi-shaper.</p>
+          </header>
           <div class="mirror-rows" id="mirror-rows"></div>
-        </div>
+        </article>
 
-        <!-- card 5: adapters -->
-        <div class="card wide">
-          <div class="card-head">
-            <h3>Drop-in for your renderer <span class="ar-tag" lang="ar">المحوّلات</span></h3>
-            <p>Structurally-typed adapters — they never import the host library, so they add nothing to your bundle. Same engine underneath.</p>
-          </div>
+        <!-- adapters -->
+        <article class="panel panel-wide panel-dark">
+          <header class="panel-head">
+            <h3>Drop-in adapters <span class="ar-tag" lang="ar">المحوّلات</span></h3>
+            <p>Structurally typed — they never import the host library, so they add nothing to your bundle. Same engine underneath.</p>
+          </header>
           <div class="snips">
             <div class="snip">
-              <div class="snip-head">jsPDF <span class="pkg">bidi-shaper/jspdf</span></div>
+              <div class="snip-head">jsPDF<span class="pkg">bidi-shaper/jspdf</span></div>
               <pre><code><span class="k">import</span> { rtlText } <span class="k">from</span> <span class="s">"bidi-shaper/jspdf"</span>;
 
-doc.<span class="k">text</span>(rtlText(<span class="s">"مرحبا بالعالم"</span>), 20, 40);</code></pre>
+doc.<span class="fn">text</span>(<span class="fn">rtlText</span>(<span class="s">"مرحبا بالعالم"</span>), 20, 40);</code></pre>
             </div>
             <div class="snip">
-              <div class="snip-head">PDFKit <span class="pkg">bidi-shaper/pdfkit</span></div>
+              <div class="snip-head">PDFKit<span class="pkg">bidi-shaper/pdfkit</span></div>
               <pre><code><span class="k">import</span> { textBidi } <span class="k">from</span> <span class="s">"bidi-shaper/pdfkit"</span>;
 
-<span class="c">// shapes + reorders; features:[] so fontkit won't re-shape</span>
-textBidi(doc, <span class="s">"سلام دنیا"</span>, 72, 80);</code></pre>
+<span class="c">// features:[] so fontkit won't re-shape</span>
+<span class="fn">textBidi</span>(doc, <span class="s">"سلام دنیا"</span>, 72, 80);</code></pre>
             </div>
             <div class="snip">
-              <div class="snip-head">Canvas 2D <span class="pkg">bidi-shaper/canvas</span></div>
+              <div class="snip-head">Canvas 2D<span class="pkg">bidi-shaper/canvas</span></div>
               <pre><code><span class="k">import</span> { fillTextBidi } <span class="k">from</span> <span class="s">"bidi-shaper/canvas"</span>;
 
-fillTextBidi(ctx, <span class="s">"قائمة (أ)"</span>, x, y);</code></pre>
+<span class="fn">fillTextBidi</span>(ctx, <span class="s">"قائمة (أ)"</span>, x, y);</code></pre>
             </div>
             <div class="snip">
-              <div class="snip-head">three.js <span class="pkg">bidi-shaper/three</span></div>
+              <div class="snip-head">three.js<span class="pkg">bidi-shaper/three</span></div>
               <pre><code><span class="k">import</span> { prepareText } <span class="k">from</span> <span class="s">"bidi-shaper/three"</span>;
 
-<span class="k">const</span> label = prepareText(<span class="s">"اردو میں خوش آمدید"</span>);
-<span class="c">// → feed to TextGeometry / troika-text</span></code></pre>
+<span class="k">const</span> label = <span class="fn">prepareText</span>(<span class="s">"اردو خوش آمدید"</span>);
+<span class="c">// → TextGeometry / troika-text</span></code></pre>
             </div>
           </div>
-        </div>
+        </article>
       </div>
     </section>
 
     <!-- ============================== CLOSING ============================== -->
-    <section class="container section closing">
-      <span class="closing-orn" aria-hidden="true">۞</span>
-      <h2>One string in, one string out.</h2>
-      <p class="section-sub">No DOM, no font files, no WASM. Just the two passes every other stack hides from you — done in pure TypeScript, ready for wherever your glyphs land.</p>
-      <div class="cta-row cta-center">
-        <a class="btn btn-primary" href="https://github.com/cc1a2b/bidi-shaper" target="_blank" rel="noopener">★ Star on GitHub</a>
-        <a class="btn btn-ghost" href="https://github.com/cc1a2b/bidi-shaper#readme" target="_blank" rel="noopener">Read the docs</a>
+    <section class="closing container">
+      <p class="closing-ar" lang="ar" dir="rtl">سطرٌ يدخل، سطرٌ يخرج</p>
+      <h2>One string in,<br />one string out.</h2>
+      <p class="sec-lead">No DOM, no font files, no WASM — just the two passes every other stack hides from you, in pure TypeScript, ready for wherever your glyphs land.</p>
+      <div class="closing-cta">
+        <a class="btn-star big" href="https://github.com/cc1a2b/bidi-shaper" target="_blank" rel="noopener">★ Star on GitHub</a>
+        <a class="btn-link" href="https://github.com/cc1a2b/bidi-shaper#readme" target="_blank" rel="noopener">Read the docs →</a>
       </div>
     </section>
   </main>
 
   <footer class="footer">
     <div class="container footer-inner">
-      <p class="colophon" id="colophon">set in Amiri &amp; Readex Pro — composed by bidi-shaper</p>
-      <div class="footer-links">
+      <p class="colophon" id="colophon"></p>
+      <nav class="footer-links">
         <a href="https://github.com/cc1a2b/bidi-shaper" target="_blank" rel="noopener">GitHub</a>
         <a href="https://github.com/cc1a2b/bidi-shaper#readme" target="_blank" rel="noopener">Docs</a>
         <a href="https://www.unicode.org/reports/tr9/" target="_blank" rel="noopener">UAX&nbsp;#9</a>
-      </div>
+      </nav>
     </div>
   </footer>
 
