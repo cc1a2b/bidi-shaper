@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="13" fill="#14110b"/>
+  <rect x="3.5" y="3.5" width="57" height="57" rx="10.5" fill="none" stroke="#f3ecdd" stroke-opacity=".14" stroke-width="1.5"/>
+  <text x="32" y="47" font-family="Amiri, Georgia, serif" font-size="42" text-anchor="middle" fill="#eaa53e">ﻻ</text>
+</svg>

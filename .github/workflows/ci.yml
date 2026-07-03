@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The published package supports Node >=18 (see package.json engines),
+        # but the test toolchain (vitest 4) requires Node >=20, so CI runs there.
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - name: Type-check
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Test (unit + full UAX #9 conformance)
+        run: npm test
+      - name: Build (ESM + CJS + d.ts)
+        run: npm run build
+      - name: Bundle smoke test
+        run: |
+          npm pack --dry-run
+          node -e "import('./dist/index.js').then(m => { if (m.render('مرحبا بالعالم') === 'مرحبا بالعالم') throw new Error('render did not transform RTL input'); console.log('ESM ok · Unicode', m.UNICODE_VERSION); })"
+          node -e "const { render, UNICODE_VERSION } = require('./dist/index.cjs'); if (typeof render('مرحبا') !== 'string') throw new Error('CJS render failed'); console.log('CJS ok · Unicode', UNICODE_VERSION);"
