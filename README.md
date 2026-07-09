@@ -11,7 +11,7 @@ one plain string out, ready for **jsPDF, pdfmake, PDFKit, canvas, three.js, term
 
 [![CI](https://github.com/cc1a2b/bidi-shaper/actions/workflows/ci.yml/badge.svg)](https://github.com/cc1a2b/bidi-shaper/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/bidi-shaper?style=flat-square&color=brightgreen)](https://www.npmjs.com/package/bidi-shaper) [![gzipped size](https://img.shields.io/badge/gzipped-15%20kB-blue?style=flat-square)](https://www.npmjs.com/package/bidi-shaper) [![UAX #9 conformance](https://img.shields.io/badge/UAX%20%239-861%2C948%20cases%20pass-3fb950?style=flat-square)](#conformance--all-861948-official-cases) [![Unicode 17.0.0](https://img.shields.io/badge/Unicode-17.0.0-5d3fd3?style=flat-square)](https://www.unicode.org/versions/Unicode17.0.0/) [![zero dependencies](https://img.shields.io/badge/deps-0-brightgreen?style=flat-square)](./package.json) [![types included](https://img.shields.io/npm/types/bidi-shaper?style=flat-square)](https://www.npmjs.com/package/bidi-shaper)
 
-**[📦 npm](https://www.npmjs.com/package/bidi-shaper) · [🕹 Live demo](https://bidi-shaper.vercel.app) · [⭐ GitHub](https://github.com/cc1a2b/bidi-shaper)**
+**[npm](https://www.npmjs.com/package/bidi-shaper) · [Live demo](https://bidi-shaper.vercel.app) · [GitHub](https://github.com/cc1a2b/bidi-shaper)**
 
 </div>
 
@@ -35,14 +35,14 @@ Give a glyph-by-glyph renderer logical-order Arabic and every one of these goes 
 
 | Failure | Naive renderer (raw string, left→right) | Through `render()` |
 |---|---|---|
-| Cursive joining | ✗ isolated, disconnected letters — ك ت ا ب | ✓ contextual forms — <span dir="rtl">كتاب</span> |
-| Reading direction | ✗ RTL words come out reversed, end-first | ✓ RTL runs flow right-to-left, LTR stays LTR |
-| Numbers inside RTL | ✗ drift to the wrong end of the sentence | ✓ stay left-to-right, in place — <span dir="rtl">سنة ١٤٤٧</span> |
-| Mixed Arabic + English | ✗ word order scrambles mid-sentence | ✓ each run in its own direction (UAX #9 levels) |
-| Brackets & parentheses | ✗ `(` points the wrong way on RTL runs | ✓ mirrored per rule L4 — <span dir="rtl">قائمة (أ)</span> |
-| lam + alef | ✗ two stray letters — ل ا | ✓ one mandatory ligature — ﻻ |
-| Harakat / tashkeel | ✗ break joining, or crash the renderer | ✓ transparent to joining; keep or strip them |
-| Persian & Urdu letters | ✗ پ گ چ ژ ٹ ڈ ے left unjoined | ✓ full Arabic-script shaping, not just Arabic |
+| Cursive joining | isolated, disconnected letters — ك ت ا ب | contextual forms — <span dir="rtl">كتاب</span> |
+| Reading direction | RTL words come out reversed, end-first | RTL runs flow right-to-left, LTR stays LTR |
+| Numbers inside RTL | drift to the wrong end of the sentence | stay left-to-right, in place — <span dir="rtl">سنة ١٤٤٧</span> |
+| Mixed Arabic + English | word order scrambles mid-sentence | each run in its own direction (UAX #9 levels) |
+| Brackets & parentheses | `(` points the wrong way on RTL runs | mirrored per rule L4 — <span dir="rtl">قائمة (أ)</span> |
+| lam + alef | two stray letters — ل ا | one mandatory ligature — ﻻ |
+| Harakat / tashkeel | break joining, or crash the renderer | transparent to joining; keep or strip them |
+| Persian & Urdu letters | پ گ چ ژ ٹ ڈ ے left unjoined | full Arabic-script shaping, not just Arabic |
 
 **Who needs this:** jsPDF · pdfmake · PDFKit-style generators · custom canvas rasterizers · bitmap-font engines · three.js `TextGeometry` / troika-text · SDF/MSDF text · terminal UIs · plotters · e-ink dashboards.
 **Who doesn't:** browser DOM/CSS, native text views, HarfBuzz-based stacks — they already run both passes (and with full OpenType typography).
@@ -322,8 +322,8 @@ The complete official Unicode 17.0.0 test suites run in CI on every commit. Not 
 
 | Suite | What it covers | Cases | Status |
 |---|---|---:|---|
-| [`BidiTest.txt`](https://www.unicode.org/Public/UCD/latest/ucd/BidiTest.txt) | All Bidi_Class sequences up to length 4 + known-pitfall cases, under auto/LTR/RTL | 770,241 | ✅ all pass |
-| [`BidiCharacterTest.txt`](https://www.unicode.org/Public/UCD/latest/ucd/BidiCharacterTest.txt) | Real code-point sequences including paired-bracket resolution (N0/BD16) | 91,707 | ✅ all pass |
+| [`BidiTest.txt`](https://www.unicode.org/Public/UCD/latest/ucd/BidiTest.txt) | All Bidi_Class sequences up to length 4 + known-pitfall cases, under auto/LTR/RTL | 770,241 | all pass |
+| [`BidiCharacterTest.txt`](https://www.unicode.org/Public/UCD/latest/ucd/BidiCharacterTest.txt) | Real code-point sequences including paired-bracket resolution (N0/BD16) | 91,707 | all pass |
 
 ```sh
 npm run test:conformance
@@ -396,7 +396,7 @@ Because it *is* — the output is visual order, and your editor applies its own 
 
 ---
 
-## 🕹 Live demo
+## Live demo
 
 **[bidi-shaper.vercel.app](https://bidi-shaper.vercel.app)** — an interactive instrument, computed live in your browser by the library source. Step your own text through the actual algorithm phases — shape, level, the L2 reordering cascade (deepest runs reverse first), mirror — and watch a naive renderer draw the before/after. Embedding levels, visual↔logical routing, contextual forms, all live.
 
@@ -441,7 +441,7 @@ Issues and pull requests are welcome on [GitHub](https://github.com/cc1a2b/bidi-
 
 Built and maintained by **[cc1a2b](https://github.com/cc1a2b)**.
 
-If bidi-shaper saves you time, please **[⭐ star it on GitHub](https://github.com/cc1a2b/bidi-shaper)** — it helps other developers find it. You might also like **[arabicfmt](https://github.com/cc1a2b/arabicfmt)** — Arabic-first formatting (currency, Hijri dates, تفقيط, plurals) from the same author — or explore [other open-source projects](https://github.com/cc1a2b?tab=repositories).
+If bidi-shaper saves you time, please **[star it on GitHub](https://github.com/cc1a2b/bidi-shaper)** — it helps other developers find it. You might also like **[arabicfmt](https://github.com/cc1a2b/arabicfmt)** — Arabic-first formatting (currency, Hijri dates, تفقيط, plurals) from the same author — or explore [other open-source projects](https://github.com/cc1a2b?tab=repositories).
 
 <div align="center">
 <sub>Built for wherever your glyphs land · <bdi lang="ar">وقفٌ للمطوّرين</bdi></sub>
