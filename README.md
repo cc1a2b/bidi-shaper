@@ -444,5 +444,5 @@ Built and maintained by **[cc1a2b](https://github.com/cc1a2b)**.
 If bidi-shaper saves you time, please **[star it on GitHub](https://github.com/cc1a2b/bidi-shaper)** — it helps other developers find it. You might also like **[arabicfmt](https://github.com/cc1a2b/arabicfmt)** — Arabic-first formatting (currency, Hijri dates, تفقيط, plurals) from the same author — or explore [other open-source projects](https://github.com/cc1a2b?tab=repositories).
 
 <div align="center">
-<sub>Built for wherever your glyphs land · <bdi lang="ar">وقفٌ للمطوّرين</bdi></sub>
+<sub>Built for wherever your glyphs land</sub>
 </div>
